@@ -1,6 +1,6 @@
 # local data
-./data/database/*
-./data/index/*
+data/database/*
+data/index/*
 
 # Byte-compiled / optimized / DLL files
 *__pycache__/
