@@ -1,38 +1,5 @@
 from typing import Union
-
-# class WordPreprocessor:
-#     """
-#     Class of word preprocessing instantce that change given world depending on the given methods
-#     """
-#     def __init__(self, method: Union[str, list]):
-#         try:
-#             assert type(method) in [type(None), str, list], "Wrong method attribute"
-#             if method is None:
-#                 self.methods = []
-#             elif isinstance(method, str):
-#                 self.methods = [method]
-#             else:
-#                 self.methods = method
-#         except AssertionError as err:
-#             print(err)
-
-#     def process(self, word):
-#         for method in self.methods:
-#             try:
-#                 word = self.processing_methods[method](word)
-#             except KeyError:
-#                 print('No such processing method')
-#                 raise
-#         return word
-
-#     @staticmethod
-#     def lowcase_process(word):
-#         assert isinstance(word, str)
-#         return word.lower()
-    
-#     processing_methods = {
-#         'lowcase':lowcase_process,
-#     }
+import re
 
 class DocumentProcessor:
     def __init__(self, methods: Union[str, list]):
@@ -56,7 +23,7 @@ class DocumentProcessor:
                 print('No such processing method')
                 raise
         return text
-
+    
     @staticmethod
     def normalize_spaces(text):
         assert isinstance(text, str)
@@ -67,8 +34,15 @@ class DocumentProcessor:
         assert isinstance(text, str)
         return text.lower()
     
+    @staticmethod
+    def special_chars(text):
+        assert isinstance(text, str)
+        return re.sub('[^A-Za-z0-9А-Яа-я ]+', '', text)
+
+    
     processing_methods = {
         'normalize_spaces':normalize_spaces,
         'lowcase':lowcase_process,
+        'special_chars':special_chars
     }
     

@@ -8,14 +8,15 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from utils import bm_search, read_whole_content
+from utils import bm_search, read_whole_content, DocumentProcessor
 
 
 
 class InvertedIndex:
-    def __init__(self, documents: list[str], load_path=None):
+    def __init__(self, documents: list[str], preprocessor, load_path=None):
         self.index = defaultdict(set)
         self.documents = documents
+        self.preprocessor = preprocessor
 
         if load_path is None:
             self.build_index()
@@ -47,6 +48,7 @@ class InvertedIndex:
     def build_index(self):
         print("Building index from scratch")
         for index, document in enumerate(self.documents):
+            document = self.preprocessor.process(document)
             splitted_words = document.split()
             for word in splitted_words:
                 self.index[word].add(index)
@@ -58,6 +60,7 @@ class InvertedIndex:
 
         for word in words_to_search:
             documents_indexes.append(self.index[word])
+
 
         containing_documents = documents_indexes[0]
         for curr_indexes in documents_indexes[1:]:
@@ -74,8 +77,9 @@ class InvertedIndex:
         right_documents = list()
         docs_to_search = [self.documents[doc] for doc in indexes_to_search]
         for index, document in enumerate(docs_to_search):
+            document = self.preprocessor.process(document)
             if bm_search(document, expression):
-                right_documents.append((indexes_to_search[index], document))
+                right_documents.append((indexes_to_search[index], self.documents[indexes_to_search[index]]))
 
         return right_documents
     
@@ -88,7 +92,7 @@ def _get_index_path(database_path: str) -> str:
         db_parent_path = os.path.dirname(os.path.dirname(database_path))
         return os.path.join(db_parent_path, 'index', db_path_hash)
 
-def index_initializer(database_path):
+def index_initializer(database_path, preprocessor):
     save_index = True
     hashed_index_path = _get_index_path(database_path)
     load_path = None
@@ -97,7 +101,7 @@ def index_initializer(database_path):
         load_path = hashed_index_path
 
     documents = read_whole_content(database_path)
-    initialized_index = InvertedIndex(documents, load_path)
+    initialized_index = InvertedIndex(documents, preprocessor, load_path)
 
     if save_index:
         initialized_index.save_index(hashed_index_path)

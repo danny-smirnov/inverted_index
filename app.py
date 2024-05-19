@@ -34,12 +34,12 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--methods', 
                         help='Methods of preprocessing documents',
                         required=False,
-                        default=['normalize_spaces', 'lowcase'])
+                        default=['lowcase', 'normalize_spaces', 'special_chars'])
 
     args = parser.parse_args()
 
     preprocessor = DocumentProcessor(methods=args.methods)
-    inverted_index = index_initializer(args.database_path)
+    inverted_index = index_initializer(args.database_path, preprocessor=preprocessor)
 
     app.run()
 
