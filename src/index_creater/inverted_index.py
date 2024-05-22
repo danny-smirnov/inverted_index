@@ -67,6 +67,7 @@ class InvertedIndex:
             splitted_words = document.split()
             for word in splitted_words:
                 self.index[word] = np.append(self.index[word], index)
+        for word in self.index:
             self.index[word] = np.unique(self.index[word])
         
     def _get_documents_containing_words_of_expression(self, expression: str) -> list:

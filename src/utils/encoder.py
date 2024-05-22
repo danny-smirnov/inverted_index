@@ -19,18 +19,17 @@ class AbstractEncoder(ABC):
 
 class EliasGammaEncoder(AbstractEncoder):
     @staticmethod
-    def encode(a: np.array):
+    def encode(a):
         a = a.view(f'u{a.itemsize}')
         l = np.log2(a).astype('u1')
         L = ((l<<1)+1).cumsum()
         out = np.zeros(L[-1],'u1')
         for i in range(l.max()+1):
             out[L-i-1] += (a>>i)&1
-        return np.packbits(out)
+        return np.packbits(out), out.size
 
     @staticmethod
-    def decode(b: np.array):
-        n = b.size
+    def decode(b,n):
         b = np.unpackbits(b,count=n).view(bool)
         s = b.nonzero()[0]
         s = (s<<1).repeat(np.diff(s,prepend=-1))
@@ -74,14 +73,13 @@ class EncodedInvertedIndex(MutableMapping):
         return self.__dict
 
 
-    def __encode_value(self, array: np.array) -> np.array:
-        encoded_arr = self.encoder.encode(array)
-        return encoded_arr
+    def __encode_value(self, array: np.array) -> tuple[np.array, int]:
+        encoded_arr, n = self.encoder.encode(array)
+        return (encoded_arr, n)
     
-    def __decode_value(self, encoded_arr: np.array) -> np.array:
-        if len(encoded_arr) == 0:
-            return encoded_arr
-        decoded_arr = self.encoder.decode(encoded_arr)
+    def __decode_value(self, encoded_tuple: np.array) -> np.array:
+        encoded_array, n = encoded_tuple
+        decoded_arr = self.encoder.decode(encoded_array, n)
         return decoded_arr
 
     def __getitem__(self, key):
