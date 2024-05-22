@@ -2,6 +2,8 @@ from collections import defaultdict
 import pickle    
 import hashlib
 import os
+import numpy as np
+from functools import partial
 
 import sys
 current = os.path.dirname(os.path.realpath(__file__))
@@ -14,7 +16,8 @@ from utils import bm_search, read_whole_content, DocumentProcessor, EncodedInver
 
 class InvertedIndex:
     def __init__(self, documents: list[str], preprocessor, load_path=None, encoded=False):
-        self.index = defaultdict(set)
+        self.index = defaultdict(partial(np.ndarray, 0, dtype='int32'))
+
         self.documents = documents
         self.preprocessor = preprocessor
         self.encoded = encoded
@@ -63,22 +66,20 @@ class InvertedIndex:
             document = self.preprocessor.process(document)
             splitted_words = document.split()
             for word in splitted_words:
-                self.index[word].add(index)
-        
+                self.index[word] = np.append(self.index[word], index)
+            self.index[word] = np.unique(self.index[word])
         
     def _get_documents_containing_words_of_expression(self, expression: str) -> list:
         words_to_search = expression.split()
         documents_indexes = []
 
         for word in words_to_search:
-            print(type(self.index[word]))
             documents_indexes.append(self.index[word])
 
 
         containing_documents = documents_indexes[0]
         for curr_indexes in documents_indexes[1:]:
-            containing_documents.intersection(curr_indexes)
-
+            containing_documents = np.intersect1d(containing_documents, curr_indexes)
         return list(containing_documents)
     
     

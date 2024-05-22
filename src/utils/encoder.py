@@ -59,7 +59,7 @@ class EncodedInvertedIndex(MutableMapping):
     possible_encoders = {
         'eliasgamma':EliasGammaEncoder
     }
-    def __init__(self, inverted_index: dict[str, set], encoding_method='eliasgamma'):
+    def __init__(self, inverted_index: dict[str, np.array], encoding_method='eliasgamma'):
         self.__dict = inverted_index
         self.encoder: AbstractEncoder = self.possible_encoders[encoding_method]()
 
@@ -74,16 +74,15 @@ class EncodedInvertedIndex(MutableMapping):
         return self.__dict
 
 
-    def __encode_value(self, arr: set) -> np.array:
-        np_arr = np.array(list(arr))
-        encoded_arr = self.encoder.encode(np_arr)
+    def __encode_value(self, array: np.array) -> np.array:
+        encoded_arr = self.encoder.encode(array)
         return encoded_arr
     
-    def __decode_value(self, encoded_arr: np.array) -> set:
+    def __decode_value(self, encoded_arr: np.array) -> np.array:
         if len(encoded_arr) == 0:
             return encoded_arr
         decoded_arr = self.encoder.decode(encoded_arr)
-        return set(list(decoded_arr))
+        return decoded_arr
 
     def __getitem__(self, key):
         decoded_value = self.__decode_value(self.__dict[key])
