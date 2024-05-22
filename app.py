@@ -34,7 +34,14 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--methods', 
                         help='Methods of preprocessing documents',
                         required=False,
+                        action='store',
+                        dest='methods',
+                        nargs='*',
                         default=['lowcase', 'normalize_spaces', 'special_chars'])
+    
+    parser.add_argument('-e', '--encoded',
+                        help='Does index needs to be encoded to reduce its size',
+                        action='store_true')
 
     args = parser.parse_args()
 
