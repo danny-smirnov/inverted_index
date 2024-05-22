@@ -46,7 +46,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     preprocessor = DocumentProcessor(methods=args.methods)
-    inverted_index = index_initializer(args.database_path, preprocessor=preprocessor)
+    inverted_index = index_initializer(args.database_path, preprocessor=preprocessor, encoded=args.encoded)
 
     app.run()
 

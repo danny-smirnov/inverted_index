@@ -1,6 +1,7 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from collections.abc import MutableMapping
+from tqdm import tqdm
 
 class AbstractEncoder(ABC):
 
@@ -17,7 +18,6 @@ class AbstractEncoder(ABC):
 
 
 class EliasGammaEncoder(AbstractEncoder):
-
     @staticmethod
     def encode(a: np.array):
         a = a.view(f'u{a.itemsize}')
@@ -26,10 +26,11 @@ class EliasGammaEncoder(AbstractEncoder):
         out = np.zeros(L[-1],'u1')
         for i in range(l.max()+1):
             out[L-i-1] += (a>>i)&1
-        return np.packbits(out),out.size
+        return np.packbits(out)
 
     @staticmethod
-    def decode(b: np.array, n: int):
+    def decode(b: np.array):
+        n = b.size
         b = np.unpackbits(b,count=n).view(bool)
         s = b.nonzero()[0]
         s = (s<<1).repeat(np.diff(s,prepend=-1))
@@ -52,50 +53,60 @@ class EliasGammaEncoder(AbstractEncoder):
     
 
 class EncodedInvertedIndex(MutableMapping):
+    """
+    Stores values of 
+    """
     possible_encoders = {
         'eliasgamma':EliasGammaEncoder
     }
     def __init__(self, inverted_index: dict[str, set], encoding_method='eliasgamma'):
-        self.__dict__ = inverted_index
+        self.__dict = inverted_index
         self.encoder: AbstractEncoder = self.possible_encoders[encoding_method]()
 
-        for key in self.__dict__:
-            self.__dict__[key] = self.__encode_value(self.__dict__[key])
+        for key in tqdm(self.__dict):
+            self.__dict[key] = self.__encode_value(self.__dict[key])
 
 
-    def __encode_value(self, arr: set) -> tuple[list, int]:
+    def load_encoded_dict(self, encoded_dict):
+        self.__dict = encoded_dict
+
+    def get_encoded_dict(self):
+        return self.__dict
+
+
+    def __encode_value(self, arr: set) -> np.array:
         np_arr = np.array(list(arr))
-        encoded_arr, n = self.encoder.encode(np_arr)
-        return (list(encoded_arr), n)
+        encoded_arr = self.encoder.encode(np_arr)
+        return encoded_arr
     
-    def __decode_value(self, arr: tuple[list, int]) -> set:
-        encoded_arr, n = arr
-        np_arr = np.array(encoded_arr)
-        decoded_arr = self.encoder.decode(np_arr, n)
+    def __decode_value(self, encoded_arr: np.array) -> set:
+        if len(encoded_arr) == 0:
+            return encoded_arr
+        decoded_arr = self.encoder.decode(encoded_arr)
         return set(list(decoded_arr))
 
     def __getitem__(self, key):
-        decoded_value = self.__decode_value(self.__dict__[key])
+        decoded_value = self.__decode_value(self.__dict[key])
         return decoded_value
     
     def __setitem__(self, key, value):
         encoded_value = self.__encode_value(value)
-        self.__dict__[key] = encoded_value
+        self.__dict[key] = encoded_value
 
     def __delitem__(self, key):
-        del self.__dict__[key]
+        del self.__dict[key]
 
     def __iter__(self):
-        return iter(self.__dict__)
+        return iter(self.__dict)
     
     def __len__(self):
-        return len(self.__dict__)
+        return len(self.__dict)
     
     def __str__(self):
         """returns simple str of a dict, values will be encoded"""
-        return str(self.__dict__)
+        return str(self.__dict)
     
     def __repr__(self):
         return '{}, D({})'.format(super(EncodedInvertedIndex, self).__repr__(), 
-                                  self.__dict__)
+                                  self.__dict)
 

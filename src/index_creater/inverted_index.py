@@ -8,39 +8,51 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-from utils import bm_search, read_whole_content, DocumentProcessor
+from utils import bm_search, read_whole_content, DocumentProcessor, EncodedInvertedIndex
 
 
 
 class InvertedIndex:
-    def __init__(self, documents: list[str], preprocessor, load_path=None):
+    def __init__(self, documents: list[str], preprocessor, load_path=None, encoded=False):
         self.index = defaultdict(set)
         self.documents = documents
         self.preprocessor = preprocessor
+        self.encoded = encoded
 
         if load_path is None:
             self.build_index()
+            if encoded:
+                print('Encoding inverted index')
+                self.index = EncodedInvertedIndex(self.index)
         else:
             self.load_index(load_path)
 
-    def load_index(self, path, method='pickle'):
+        
+
+    def load_index(self, path):
         '''
         Load stored inverted index
         '''
         print("Loading index from storage")
-        AVAILABLE_METHODS = ['pickle']
-        assert method in AVAILABLE_METHODS, 'Unknown load method'
-
-        if method == 'pickle':
+        
+        if self.encoded:
+            self.index = EncodedInvertedIndex(self.index)
+            with open(path, 'rb') as f:
+                loaded_index = pickle.load(f)
+            self.index.load_encoded_dict(loaded_index)
+        else:
             with open(path, 'rb') as f:
                 self.index = pickle.load(f)
 
     
-    def save_index(self, save_path, method='pickle'):
-        AVAILABLE_METHODS = ['pickle']
-        assert method in AVAILABLE_METHODS, 'Unknown load method'
+    def save_index(self, save_path):
 
-        if method == 'pickle':
+        print("Saving index")
+
+        if self.encoded:
+            with open(save_path, 'wb') as f:
+                pickle.dump(self.index.get_encoded_dict(), f)
+        else:
             with open(save_path, 'wb') as f:
                 pickle.dump(self.index, f)
 
@@ -59,6 +71,7 @@ class InvertedIndex:
         documents_indexes = []
 
         for word in words_to_search:
+            print(type(self.index[word]))
             documents_indexes.append(self.index[word])
 
 
@@ -84,27 +97,29 @@ class InvertedIndex:
         return right_documents
     
 
-def _get_index_path(database_path: str) -> str:
+def _get_index_path(database_path: str, encoded: bool=False) -> str:
         """
         All indexes is stored in ./data/index directory, name of the file generates from db_path through md5 hash
         """
-        db_path_hash = f'{hashlib.md5(database_path.encode()).hexdigest()}.pickle'
+        db_path_hash = f'{hashlib.md5((database_path+str(encoded)).encode()).hexdigest()}.pickle'
         db_parent_path = os.path.dirname(os.path.dirname(database_path))
         return os.path.join(db_parent_path, 'index', db_path_hash)
 
-def index_initializer(database_path, preprocessor):
+def index_initializer(database_path, preprocessor, encoded):
     save_index = True
-    hashed_index_path = _get_index_path(database_path)
+    hashed_index_path = _get_index_path(database_path, encoded)
     load_path = None
     if os.path.exists(hashed_index_path):
         save_index = False
         load_path = hashed_index_path
 
     documents = read_whole_content(database_path)
-    initialized_index = InvertedIndex(documents, preprocessor, load_path)
+    initialized_index = InvertedIndex(documents, preprocessor, load_path, encoded)
 
     if save_index:
         initialized_index.save_index(hashed_index_path)
+
+        
 
     return initialized_index
 
