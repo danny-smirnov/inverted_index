@@ -58,9 +58,9 @@ class EliasDeltaEncoder(AbstractEncoder):
     def encode(a: np.array) -> tuple[np.array, int]:
         if len(a) == 0:
             return (a, 0, 0)
-        # if len(a) == 1:
-        #     encoded, n = EliasGammaEncoder.encode(a)
-        #     return (encoded, n, 0)
+        if len(a) == 1:
+            encoded, n = EliasGammaEncoder.encode(a)
+            return (encoded, n, 0)
         a.sort()
         deltas = np.diff(a)
         gamma_encoded, n = EliasGammaEncoder.encode(deltas)

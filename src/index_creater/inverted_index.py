@@ -66,7 +66,7 @@ class InvertedIndex:
             document = self.preprocessor.process(document)
             splitted_words = document.split()
             for word in splitted_words:
-                self.index[word] = np.append(self.index[word], index)
+                self.index[word] = np.append(self.index[word], index+1)
         for word in self.index:
             self.index[word] = np.unique(self.index[word])
         
@@ -81,7 +81,7 @@ class InvertedIndex:
         containing_documents = documents_indexes[0]
         for curr_indexes in documents_indexes[1:]:
             containing_documents = np.intersect1d(containing_documents, curr_indexes)
-        return list(containing_documents)
+        return list(containing_documents-1)
     
     
     def search(self, expression: str) -> list[int, str]:
