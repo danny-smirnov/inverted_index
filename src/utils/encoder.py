@@ -82,7 +82,7 @@ class EncodedInvertedIndex(MutableMapping):
         'gamma':EliasGammaEncoder,
         'delta':EliasDeltaEncoder
     }
-    def __init__(self, inverted_index: dict[str, np.array], encoding_method='eliasgamma'):
+    def __init__(self, inverted_index: dict[str, np.array], encoding_method='gamma'):
         self.__dict = inverted_index
         self.encoder: AbstractEncoder = self.possible_encoders[encoding_method]()
 
