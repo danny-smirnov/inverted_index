@@ -30,6 +30,8 @@ class EliasGammaEncoder(AbstractEncoder):
 
     @staticmethod
     def decode(b,n):
+        if len(b) == 0:
+            return np.array([])
         b = np.unpackbits(b,count=n).view(bool)
         s = b.nonzero()[0]
         s = (s<<1).repeat(np.diff(s,prepend=-1))
@@ -56,9 +58,9 @@ class EliasDeltaEncoder(AbstractEncoder):
     def encode(a: np.array) -> tuple[np.array, int]:
         if len(a) == 0:
             return (a, 0, 0)
-        if len(a) == 1:
-            encoded, n = EliasGammaEncoder.encode(a)
-            return (encoded, n, 0)
+        # if len(a) == 1:
+        #     encoded, n = EliasGammaEncoder.encode(a)
+        #     return (encoded, n, 0)
         a.sort()
         deltas = np.diff(a)
         gamma_encoded, n = EliasGammaEncoder.encode(deltas)
@@ -68,8 +70,10 @@ class EliasDeltaEncoder(AbstractEncoder):
     @staticmethod
     def decode(b: np.array, n: int, first_number: int) -> np.array:
         deltas = EliasGammaEncoder.decode(b, n)
-        cumsum = np.cumsum(np.insert(deltas, 0, 0))
+        cumsum = np.cumsum(deltas)
+        cumsum = np.insert(cumsum, 0, 0)
         
+
         return cumsum + np.ones_like(cumsum) * first_number
 
     
