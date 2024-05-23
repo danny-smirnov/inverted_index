@@ -39,7 +39,7 @@ class InvertedIndex:
         print("Loading index from storage")
         
         if not self.encoding is None:
-            self.index = EncodedInvertedIndex(self.index)
+            self.index = EncodedInvertedIndex(self.index, encoding_method=self.encoding)
             with open(path, 'rb') as f:
                 loaded_index = pickle.load(f)
             self.index.load_encoded_dict(loaded_index)
