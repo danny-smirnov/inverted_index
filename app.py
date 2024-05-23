@@ -29,7 +29,7 @@ if __name__ == '__main__':
     
     parser.add_argument('-p','--database_path', 
                         help='Path to existing database', 
-                        required=False)
+                        required=True)
     
     parser.add_argument('-m', '--methods', 
                         help='Methods of preprocessing documents',
@@ -39,14 +39,15 @@ if __name__ == '__main__':
                         nargs='*',
                         default=['lowcase', 'normalize_spaces', 'special_chars'])
     
-    parser.add_argument('-e', '--encoded',
+    parser.add_argument('-e', '--encoding',
                         help='Does index needs to be encoded to reduce its size',
-                        action='store_true')
+                        required=False,
+                        choices=['delta', 'gamma'])
 
     args = parser.parse_args()
 
     preprocessor = DocumentProcessor(methods=args.methods)
-    inverted_index = index_initializer(args.database_path, preprocessor=preprocessor, encoded=args.encoded)
+    inverted_index = index_initializer(args.database_path, preprocessor=preprocessor, encoding=args.encoding)
 
     app.run()
 

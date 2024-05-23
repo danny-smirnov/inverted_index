@@ -4,7 +4,7 @@ import hashlib
 import os
 import numpy as np
 from functools import partial
-
+from typing import Union
 import sys
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -15,18 +15,18 @@ from utils import bm_search, read_whole_content, DocumentProcessor, EncodedInver
 
 
 class InvertedIndex:
-    def __init__(self, documents: list[str], preprocessor, load_path=None, encoded=False):
+    def __init__(self, documents: list[str], preprocessor, load_path=None, encoding=False):
         self.index = defaultdict(partial(np.ndarray, 0, dtype='int32'))
 
         self.documents = documents
         self.preprocessor = preprocessor
-        self.encoded = encoded
+        self.encoding = encoding
 
         if load_path is None:
             self.build_index()
-            if encoded:
+            if not encoding is None:
                 print('Encoding inverted index')
-                self.index = EncodedInvertedIndex(self.index)
+                self.index = EncodedInvertedIndex(self.index, encoding_method=self.encoding)
         else:
             self.load_index(load_path)
 
@@ -38,7 +38,7 @@ class InvertedIndex:
         '''
         print("Loading index from storage")
         
-        if self.encoded:
+        if not self.encoding is None:
             self.index = EncodedInvertedIndex(self.index)
             with open(path, 'rb') as f:
                 loaded_index = pickle.load(f)
@@ -52,7 +52,7 @@ class InvertedIndex:
 
         print("Saving index")
 
-        if self.encoded:
+        if not self.encoding is None:
             with open(save_path, 'wb') as f:
                 pickle.dump(self.index.get_encoded_dict(), f)
         else:
@@ -99,24 +99,25 @@ class InvertedIndex:
         return right_documents
     
 
-def _get_index_path(database_path: str, encoded: bool=False) -> str:
+def _get_index_path(database_path: str, preprocessor: list, encoded: Union[bool, str]=False) -> str:
         """
         All indexes is stored in ./data/index directory, name of the file generates from db_path through md5 hash
         """
-        db_path_hash = f'{hashlib.md5((database_path+str(encoded)).encode()).hexdigest()}.pickle'
+        db_path_hash = f'{hashlib.md5((database_path+str(encoded)+'-'.join(preprocessor)).encode()).hexdigest()}.pickle'
         db_parent_path = os.path.dirname(os.path.dirname(database_path))
         return os.path.join(db_parent_path, 'index', db_path_hash)
 
-def index_initializer(database_path, preprocessor, encoded):
+def index_initializer(database_path, preprocessor, encoding):
     save_index = True
-    hashed_index_path = _get_index_path(database_path, encoded)
+    methods = preprocessor.get_methods()
+    hashed_index_path = _get_index_path(database_path, methods, encoding)
     load_path = None
     if os.path.exists(hashed_index_path):
         save_index = False
         load_path = hashed_index_path
 
     documents = read_whole_content(database_path)
-    initialized_index = InvertedIndex(documents, preprocessor, load_path, encoded)
+    initialized_index = InvertedIndex(documents, preprocessor, load_path, encoding)
 
     if save_index:
         initialized_index.save_index(hashed_index_path)

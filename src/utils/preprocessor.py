@@ -15,6 +15,9 @@ class DocumentProcessor:
             print(err)
 
 
+    def get_methods(self):
+        return self.methods
+
     def process(self, text):
         for method in self.methods:
             try:

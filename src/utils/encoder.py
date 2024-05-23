@@ -49,6 +49,29 @@ class EliasGammaEncoder(AbstractEncoder):
         for i in range(mx):
             out[b[offs[1:]-i-1] & (sz>=i)] += 1<<i
         return out
+
+
+class EliasDeltaEncoder(AbstractEncoder):
+    @staticmethod
+    def encode(a: np.array) -> tuple[np.array, int]:
+        if len(a) == 0:
+            return (a, 0, 0)
+        if len(a) == 1:
+            encoded, n = EliasGammaEncoder.encode(a)
+            return (encoded, n, 0)
+        a.sort()
+        deltas = np.diff(a)
+        gamma_encoded, n = EliasGammaEncoder.encode(deltas)
+        
+        return gamma_encoded, n, a[0]
+
+    @staticmethod
+    def decode(b: np.array, n: int, first_number: int) -> np.array:
+        deltas = EliasGammaEncoder.decode(b, n)
+        cumsum = np.cumsum(np.insert(deltas, 0, 0))
+        
+        return cumsum + np.ones_like(cumsum) * first_number
+
     
 
 class EncodedInvertedIndex(MutableMapping):
@@ -56,7 +79,8 @@ class EncodedInvertedIndex(MutableMapping):
     Stores values of 
     """
     possible_encoders = {
-        'eliasgamma':EliasGammaEncoder
+        'gamma':EliasGammaEncoder,
+        'delta':EliasDeltaEncoder
     }
     def __init__(self, inverted_index: dict[str, np.array], encoding_method='eliasgamma'):
         self.__dict = inverted_index
@@ -73,13 +97,12 @@ class EncodedInvertedIndex(MutableMapping):
         return self.__dict
 
 
-    def __encode_value(self, array: np.array) -> tuple[np.array, int]:
-        encoded_arr, n = self.encoder.encode(array)
-        return (encoded_arr, n)
+    def __encode_value(self, array: np.array) -> tuple:
+        args = self.encoder.encode(array)
+        return args
     
-    def __decode_value(self, encoded_tuple: np.array) -> np.array:
-        encoded_array, n = encoded_tuple
-        decoded_arr = self.encoder.decode(encoded_array, n)
+    def __decode_value(self, args: tuple) -> np.array:
+        decoded_arr = self.encoder.decode(*args)
         return decoded_arr
 
     def __getitem__(self, key):
