@@ -2,6 +2,7 @@ from collections import defaultdict
 import pickle    
 import hashlib
 import os
+from tqdm import tqdm
 import numpy as np
 from functools import partial
 from typing import Union
@@ -62,7 +63,9 @@ class InvertedIndex:
 
     def build_index(self):
         print("Building index from scratch")
+        pbar = tqdm(total=len(self.documents))
         for index, document in enumerate(self.documents):
+            pbar.update()
             document = self.preprocessor.process(document)
             splitted_words = document.split()
             for word in splitted_words:

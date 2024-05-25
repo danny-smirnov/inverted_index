@@ -7,6 +7,10 @@ from src.utils import DocumentProcessor
 
 app = Flask(__name__)
 
+@app.route('/', methods=['GET'])
+def get_route():
+    return "App is working"
+
 @app.route('/documents', methods=['GET'])
 def document_search_route():
     query = request.args.get('query')
@@ -37,8 +41,9 @@ if __name__ == '__main__':
                         action='store',
                         dest='methods',
                         nargs='*',
-                        default=['lowcase', 'normalize_spaces', 'special_chars'])
-    
+                        default=['lowcase', 'normalize_spaces', 'special_chars',
+                                 'remove_stopwords','lemmatize_text'])
+
     parser.add_argument('-e', '--encoding',
                         help='Does index needs to be encoded to reduce its size',
                         required=False,

@@ -13,7 +13,7 @@ class TestEncoder(unittest.TestCase):
         response = app.test_client().get('/')
 
         assert response.status_code == 200
-        assert response.data.decode('utf-8') == 'Testing, Flask!'
+        assert response.data.decode('utf-8') == 'App is working'
 
 
 if __name__ == '__main__':
